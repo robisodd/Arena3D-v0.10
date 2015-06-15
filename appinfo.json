@@ -1,0 +1,80 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "robisodd",
+    "longName": "3DFPS v0.10 beta",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/redbrick-bw.png",
+                "name": "REDBRICK",
+                "type": "png"
+            },
+            {
+                "file": "images/texture.png",
+                "name": "STONE",
+                "type": "png"
+            },
+            {
+                "file": "images/ceiling.png",
+                "name": "CEILING_LIGHTS",
+                "type": "png"
+            },
+            {
+                "file": "images/floor.png",
+                "name": "FLOOR_TILE",
+                "type": "png"
+            },
+            {
+                "file": "images/3DICON.png",
+                "menuIcon": true,
+                "name": "ICON",
+                "type": "png"
+            },
+            {
+                "file": "images/circle.png",
+                "name": "WALL_CIRCLE",
+                "type": "png"
+            },
+            {
+                "file": "images/fifty.png",
+                "name": "WALL_FIFTY",
+                "type": "png"
+            },
+            {
+                "file": "images/brick.png",
+                "name": "WALL_BRICK",
+                "type": "png"
+            },
+            {
+                "file": "images/Smiley.png",
+                "name": "SPRITE_SMILEY",
+                "type": "png"
+            },
+            {
+                "file": "images/Smiley-Mask.png",
+                "name": "SPRITE_SMILEY_MASK",
+                "type": "png"
+            },
+            {
+                "file": "images/grass.png",
+                "name": "GRASS",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "3DFPS v0.10",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "529a7262-efdb-48d4-80d4-da14963099b9",
+    "versionLabel": "0.10",
+    "watchapp": {
+        "watchface": false
+    }
+}
