@@ -98,7 +98,7 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
   int32_t y, colheight, halfheight;
   uint32_t x, addr, xaddr, yaddr, xbit, xoffset, yoffset;
   uint32_t *target, *mask;
-  uint8_t *target2;
+  
   
 ///  int32_t dist[144];                 // Array of non-cos adjusted distance for each vertical wall segment -- for sprite rendering
   halfheight = box.size.h/2;
@@ -132,30 +132,32 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
       //z -= 64; if(z<0) z=0;   // Make everything 1 block (64px) closer (solid white without having to be nearly touching)
       //z = sqrt_int(z,10) >> 1; // z was 0-RANGE(max dist visible), now z = 0 to 12: 0=close 10=distant.  Square Root makes it logarithmic
       //z -= 2; if(z<0) z=0;    // Closer still (zWas=zNow: 0-64=0, 65-128=2, 129-192=3, 256=4, 320=6, 384=6, 448=7, 512=8, 576=9, 640=10)
-
+      // end shade calculation
+    
       colheight = (box.size.h << 21) /  ray.dist;    // half wall segment height = box.size.h * wallheight * 64(the "zoom factor") / (distance >> 16) // now /2 (<<21 instead of 22)
       if(colheight>halfheight) colheight=halfheight; // Make sure line isn't drawn beyond bounding box (also halve it cause of 2 32bit textures)
       
       // Texture the Ray hit, point to 1st half of texture (half, cause a 64x64px texture menas there's 2 uint32_t per texture row.  Also why * 2 below)
 //       target = (uint32_t*)texture[squaretype[ray.hit].face[ray.face]]->addr + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
 
-      target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]);
-//       target = target + (ray.offset*2);
+///    uint8_t *target2;
+///    target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]);
+//      target2 = (uint8_t*)target;
+//      target2 = target2 + (ray.offset*32);  // * gbitmap_get_bytes_per_row(the texutre)
+///    target = target + (ray.offset*2);
     
-      target2 = (uint8_t*)target;
-      target2 = target2 + (ray.offset*32);  // * gbitmap_get_bytes_per_row(the texutre)
     
-      x = col+box.origin.x;  // X screen coordinate
-      addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
+    
+///    x = col+box.origin.x;  // X screen coordinate
+///    addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
 //       addr = (x >> 5) + ((box.origin.y + halfheight) * 5); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
 //       xbit = x & 31;        // X bit-shift amount (for which bit within screen memory's 32bit word the pixel exists)
 
-      y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
-      for(; y<colheight; y++, yoffset+=144) {
-        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-        
-        screen[addr - yoffset] = *(target2 + ((32 + (31-xoffset))/2));  // Draw Top Half
-        screen[addr + yoffset] = *(target2 + ((32 - xoffset)/2));  // Draw Bottom Half
+////       y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
+////       for(; y<colheight; y++, yoffset+=144) {
+////         xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+////         screen[addr - yoffset] = *(target2 + ((32 + (31-xoffset))/2));  // Draw Top Half
+////         screen[addr + yoffset] = *(target2 + ((32 - xoffset)/2));  // Draw Bottom Half
 
         
         
@@ -169,12 +171,22 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
 // 		}
 // 	}
 // }
-        
+
         
 //         screen[addr - yoffset] = (((*target >> (31-xoffset))&1))*0b11110000;  // Draw Top Half
 //         screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))*0b11110000;  // Draw Bottom Half
 
-      }
+////       }
+
+    target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]) + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
+    x = col+box.origin.x;  // X screen coordinate
+    addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
+    y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
+    for(; y<colheight; y++, yoffset+=144) {
+      xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+      screen[addr - yoffset] = (((*target >> (31-xoffset))&1))?0b11110000:0b11000000;  // Draw Top Half
+      screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))?0b11110000:0b11000000;  // Draw Bottom Half
+    }
 
 
     // Draw Floor/Ceiling

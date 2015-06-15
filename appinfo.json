@@ -4,7 +4,7 @@
         ""
     ],
     "companyName": "robisodd",
-    "longName": "3DFPS v0.10 beta",
+    "longName": "Arena3D v0.10 beta",
     "projectType": "native",
     "resources": {
         "media": [
@@ -67,12 +67,12 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "3DFPS v0.10",
+    "shortName": "Arena3D v0.10",
     "targetPlatforms": [
         "aplite",
         "basalt"
     ],
-    "uuid": "529a7262-efdb-48d4-80d4-da14963099b9",
+    "uuid": "529a7262-efdb-b00b-80d4-da14963099b9",
     "versionLabel": "0.10",
     "watchapp": {
         "watchface": false

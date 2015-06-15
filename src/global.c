@@ -115,11 +115,11 @@ void GenerateRandomMap() {
 
 // Generates maze starting from startx, starty, filling map with (0=empty, 1=wall, -1=special)
 void GenerateMazeMap(int32_t startx, int32_t starty) {
-  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=7;
+  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=0;
   squaretype[0].ceiling = 255;
   squaretype[0].floor = 6;
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=7;
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=0;
   squaretype[1].ceiling = 4;
   squaretype[1].floor = 3;
   
