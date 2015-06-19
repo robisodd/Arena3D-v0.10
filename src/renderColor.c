@@ -29,7 +29,7 @@ void draw_textbox(GContext *ctx, GRect textframe, char *text) {
     graphics_context_set_fill_color(ctx, GColorBlack);   graphics_fill_rect(ctx, textframe, 0, GCornerNone);  //Black Solid Rectangle
     graphics_context_set_stroke_color(ctx, GColorWhite); graphics_draw_rect(ctx, textframe);                //White Rectangle Border  
     graphics_context_set_text_color(ctx, GColorWhite);  // White Text
-    graphics_draw_text(ctx, text, fonts_get_system_font(FONT_KEY_GOTHIC_14), textframe, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);  //Write Text
+    graphics_draw_text(ctx, text, fonts_get_system_font(FONT_KEY_GOTHIC_14), textframe, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);  //Write Text
 }
 
 
@@ -178,14 +178,53 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
 
 ////       }
 
-    target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]) + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
-    x = col+box.origin.x;  // X screen coordinate
-    addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
-    y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
-    for(; y<colheight; y++, yoffset+=144) {
-      xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-      screen[addr - yoffset] = (((*target >> (31-xoffset))&1))?0b11110000:0b11000000;  // Draw Top Half
-      screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))?0b11110000:0b11000000;  // Draw Bottom Half
+    
+//====== This works to convert 1bit B&W walls to 1bit color walls ======//
+//     target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]) + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
+//     x = col+box.origin.x;  // X screen coordinate
+//     addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
+//     y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
+//     for(; y<colheight; y++, yoffset+=144) {
+//       xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+//       screen[addr - yoffset] = (((*target >> (31-xoffset))&1))?0b11110000:0b11000000;  // Draw Top Half
+//       screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))?0b11110000:0b11000000;  // Draw Bottom Half
+//     }
+//=====================================================================//
+    
+    
+    // Draw Color Walls (Both colored 1bit and GBitmapFormat4BitPalette color)
+    if(gbitmap_get_bytes_per_row(texture[squaretype[ray.hit].face[ray.face]])==8) {
+      // IF 1bit texture
+      // 64px / 8Bytes/row = 8px/Byte = 1bit/px
+      target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]) + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
+      x = col+box.origin.x;  // X screen coordinate
+      addr = x + ((box.origin.y + halfheight) * 144); // address of pixel vertically centered at X. (Address=xaddr + yaddr = Pixel.X + 144*Pixel.Y)
+      y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*144)
+      for(; y<colheight; y++, yoffset+=144) {
+        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+        screen[addr - yoffset] = (((*target >> (31-xoffset))&1))?0b11110000:0b11000000;  // Draw Top Half
+        screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))?0b11110000:0b11000000;  // Draw Bottom Half
+      }
+    } else {
+      // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+      //64px / 32Bytes/row = 2px/Byte = 4bits/px
+      //1px = xxxx (4 bits per pixel, 16 colors)
+      //aaaabbbb ccccdddd eeeeffff gggghhhh = XXXX (1 set of 32bits (= 8 pixels))
+      //AAAA BBBB CCCC DDDD (mid) EEEE FFFF GGGG HHHH = row (1 row = 8 sets of 32bits (= 8 sets of 8 pixels = 64 pixels))
+
+      GColor *palette = gbitmap_get_palette(texture[squaretype[ray.hit].face[ray.face]]);
+      target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]); // Puts pointer at texture beginning // maybe use GBitmap's size veriables to store texture size?
+      target += ray.offset*8;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row
+      target += 4; // puts pointer at (mid) of row (4 changes depending on palette)
+      
+      x = col+box.origin.x;  // X screen coordinate
+      addr = x + ((box.origin.y + halfheight) * 144); // address of pixel vertically centered at X. (Address=xaddr + yaddr = Pixel.X + 144*Pixel.Y)
+      y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*144)
+      for(; y<colheight; y++, yoffset+=144) {
+        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+        screen[addr - yoffset] = palette[((*(target - 1 - (xoffset>>3)) >> ((7-(xoffset&7))*4) )&15)].argb;  // Draw Top Half
+        screen[addr + yoffset] = palette[((*(target     + (xoffset>>3)) >> (   (xoffset&7) *4) )&15)].argb;  // Draw Bottom Half
+      }
     }
 
 

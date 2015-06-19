@@ -187,7 +187,8 @@ static void graphics_layer_update_proc(Layer *me, GContext *ctx) {
   time_ms(&sec1, &ms1);  //1st Time Snapshot
   
   //draw_3D(ctx,  GRect(view_x, view_y, view_w, view_h));
-  draw_3D(ctx,  GRect(1, 34, 142, 128));
+  //draw_3D(ctx,  GRect(1, 34, 142, 128));
+  draw_3D(ctx,  GRect(1, 22, 142, 144));
 //  draw_3D(ctx,  GRect(4, 110, 40, 40));
    draw_map(ctx, GRect(4, 110, 40, 40), 4);
   
@@ -196,17 +197,19 @@ static void graphics_layer_update_proc(Layer *me, GContext *ctx) {
   
   
   
-	int16_t  w 	= gbitmap_get_bounds(texture[7]).size.w;
+	//int16_t  w 	= gbitmap_get_bounds(texture[7]).size.w;
 // 	int16_t  h 	= gbitmap_get_bounds(texture[7]).size.h;
-  int16_t  h 	= gbitmap_get_bytes_per_row(texture[7]);
+  //int16_t  h 	= gbitmap_get_bytes_per_row(texture[7]);
   
     
+  snprintf(text, sizeof(text), "(%ld,%ld) %ldms %ldfps", (long)player.x, (long)player.y, (long)dt, (long)(1000/dt));  // What text to draw
   
-  snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps\n%ld %ld", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt), (long)w, (long)h);  // What text to draw
+//snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps\n%ld %ld", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt), (long)w, (long)h);  // What text to draw
 //   snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt));  // What text to draw
 //   snprintf(text, sizeof(text), "%db (%ld,%ld) %d\n%ld %ld %ld %ld %ld", heap_bytes_free(), player.x, player.y, player.facing, Q1,Q2,Q3,Q4,Q5);  // What text to draw
+  //draw_textbox(ctx, GRect(0, 0, 143, 32), text);
   
-  draw_textbox(ctx, GRect(0, 0, 143, 32), text);
+  draw_textbox(ctx, GRect(0, 0, 143, 20), text);
    
   //  Set a timer to restart loop in 50ms
   if(dt<40 && dt>0) // if time to render is less than 40ms, force framerate of 20FPS or worse

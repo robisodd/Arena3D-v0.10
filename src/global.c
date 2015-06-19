@@ -32,14 +32,19 @@ int32_t sign32(int32_t x){return (x > 0) - (x < 0);}
 void LoadMapTextures() {
   
 /*
-  const int ANIM_IMAGE_RESOURCE_IDS[] = {
-  RESOURCE_ID_FRAME_0,
-  RESOURCE_ID_FRAME_1,
-  RESOURCE_ID_FRAME_2,
-  RESOURCE_ID_FRAME_3,
-  RESOURCE_ID_FRAME_4,
-  RESOURCE_ID_FRAME_5
+TODO: Change below to this:
+  const int RESOURCES[] = {
+  RESOURCE_ID_STONE,
+  RESOURCE_ID_WALL_FIFTY,
+  RESOURCE_ID_WALL_CIRCLE,
+  RESOURCE_ID_FLOOR_TILE,
+  RESOURCE_ID_CEILING_LIGHTS,
+  RESOURCE_ID_WALL_BRICK,
+  RESOURCE_ID_GRASS,
+  RESOURCE_ID_REDBRICK
 };
+for(int i=0; i<length of RESOURCES; ++i)
+  texture[i] = gbitmap_create_with_resource(RESOURCES[i]);
 */
   
   texture[0] = gbitmap_create_with_resource(RESOURCE_ID_STONE);
@@ -51,6 +56,11 @@ void LoadMapTextures() {
   texture[6] = gbitmap_create_with_resource(RESOURCE_ID_GRASS);
   texture[7] = gbitmap_create_with_resource(RESOURCE_ID_REDBRICK);
 
+  //APP_LOG(APP_LOG_LEVEL_DEBUG, "Grass:    %d", gbitmap_get_bytes_per_row(texture[6]));
+  //APP_LOG(APP_LOG_LEVEL_DEBUG, "Redbrick: %d", gbitmap_get_bytes_per_row(texture[7]));
+  
+  
+  // TODO: Change to: SPRITE[number of sprites][2] (image/mask)
   sprite_image[0] = gbitmap_create_with_resource(RESOURCE_ID_SPRITE_SMILEY);
   sprite_mask[0] = gbitmap_create_with_resource(RESOURCE_ID_SPRITE_SMILEY_MASK);
 }
@@ -119,7 +129,7 @@ void GenerateMazeMap(int32_t startx, int32_t starty) {
   squaretype[0].ceiling = 255;
   squaretype[0].floor = 6;
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=0;
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=7;
   squaretype[1].ceiling = 4;
   squaretype[1].floor = 3;
   
