@@ -123,12 +123,13 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
       addr = (x >> 5) + ((box.origin.y + halfheight) * 5); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
        xbit = x & 31;        // X bit-shift amount (for which bit within screen memory's 32bit word the pixel exists)
     
-      y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
-      for(; y<colheight; y++, yoffset+=5) {
-        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-        ctx32[addr - yoffset] |= (((*target >> (31-xoffset))&1) << xbit);  // Draw Top Half
-        ctx32[addr + yoffset] |= (((*(target+1)  >> xoffset)&1) << xbit);  // Draw Bottom Half
-      }
+    // Draw Wall
+    y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
+    for(; y<=colheight; ++y, yoffset+=5) {
+      xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+      ctx32[addr - yoffset] |= (((*target >> (31-xoffset))&1) << xbit);  // Draw Top Half
+      ctx32[addr + yoffset] |= (((*(target+1)  >> xoffset)&1) << xbit);  // Draw Bottom Half
+    } // End Draw Wall
 
     // Draw Floor/Ceiling
     int32_t temp_x = (((box.size.h << 5) * cos_lookup(player.facing + angle)) / cos_lookup(angle)); // Calculate now to save time later

@@ -52,6 +52,12 @@
         Got rid of view GRect
         player.facing is now int16 -- removed all player.facing%TRIG_MAX_ANGLE and other large angle corrections
         
+  v0.10:Recompiled for SDK v3.0
+        Added single color to 1bit textures
+        
+  v0.11:Added 16color texture walls
+        Changed for(; y<colheight; y++, yoffset+=144) to for(; y<=colheight; y++, yoffset+=144) to fix ground showing below wall
+        
   To Do:
         Maybe X&Y coordinates can be int16 (max board of 512x512=256kB)
         Texture looping

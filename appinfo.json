@@ -4,7 +4,7 @@
         ""
     ],
     "companyName": "robisodd",
-    "longName": "Arena3D v0.10 beta",
+    "longName": "Arena3D v0.11 beta",
     "projectType": "native",
     "resources": {
         "media": [
@@ -67,13 +67,13 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "Arena3D v0.10",
+    "shortName": "Arena3D",
     "targetPlatforms": [
         "aplite",
         "basalt"
     ],
     "uuid": "667971ee-babe-4ae6-8b88-9a17401af25e",
-    "versionLabel": "0.10",
+    "versionLabel": "0.11",
     "watchapp": {
         "watchface": false
     }

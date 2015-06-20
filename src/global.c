@@ -72,11 +72,12 @@ void UnLoadMapTextures() {
 }
 
 void GenerateSquareMap() {
+  //Type 0 is how to render out-of-bounds
   squaretype[0].ceiling = 255; // outside sky
   squaretype[0].floor   = 6;   // outside grass
-  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=5;
+  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=1; // was 5
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=5;
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=7; //5 for 1bit image
   squaretype[1].ceiling = 4;
   squaretype[1].floor   = 3;
   
@@ -84,10 +85,10 @@ void GenerateSquareMap() {
     map[i] = 1;                            // inside floor/ceiling
   
   for (int16_t i=0; i<mapsize; i++) {
-    map[i*mapsize + 0]           = 128+0;  // west wall
-    map[i*mapsize + mapsize - 1] = 128+0;  // east wall
-    map[i]                       = 128+0;  // north wall
-    map[(mapsize-1)*mapsize + i] = 128+0;  // south wall
+    map[i*mapsize + 0]           = 128+1;  // west wall
+    map[i*mapsize + mapsize - 1] = 128+1;  // east wall
+    map[i]                       = 128+1;  // north wall
+    map[(mapsize-1)*mapsize + i] = 128+1;  // south wall
   }
   map[((mapsize/2) * mapsize) + (mapsize/2)] = 128+1;  // middle block
 
@@ -196,7 +197,7 @@ void walk(int32_t direction, int32_t distance) {
 //modifies: global RayStruct ray
 //    uses: getmap(), abs32()
 void shoot_ray(int32_t start_x, int32_t start_y, int32_t angle) {
-  int32_t sin, cos, dx, dy, nx, ny;
+  int32_t sin, cos, dx, dy, nx, ny;  // sine & cosine, difference x&y, next x&y
 
     sin = sin_lookup(angle);
     cos = cos_lookup(angle);
