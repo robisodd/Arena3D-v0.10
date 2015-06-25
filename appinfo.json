@@ -9,23 +9,58 @@
     "resources": {
         "media": [
             {
+                "file": "images/test.png",
+                "name": "TEST",
+                "type": "png"
+            },
+            {
+                "file": "images/PrizeBox.png",
+                "name": "PrizeBox",
+                "type": "png"
+            },
+            {
+                "file": "images/wood-16.png",
+                "name": "WOOD16",
+                "type": "png"
+            },
+            {
+                "file": "images/Grass-64.png",
+                "name": "GRASS64",
+                "type": "png"
+            },
+            {
                 "file": "images/redbrick-bw.png",
                 "name": "REDBRICK",
                 "type": "png"
             },
             {
-                "file": "images/texture.png",
-                "name": "STONE",
+                "file": "images/grass.png",
+                "name": "GRASS",
                 "type": "png"
             },
             {
-                "file": "images/ceiling.png",
-                "name": "CEILING_LIGHTS",
+                "file": "images/Smiley-Mask.png",
+                "name": "SPRITE_SMILEY_MASK",
                 "type": "png"
             },
             {
-                "file": "images/floor.png",
-                "name": "FLOOR_TILE",
+                "file": "images/Smiley.png",
+                "name": "SPRITE_SMILEY",
+                "type": "png"
+            },
+            {
+                "file": "images/brick.png",
+                "name": "WALL_BRICK",
+                "type": "png"
+            },
+            {
+                "file": "images/fifty.png",
+                "name": "WALL_FIFTY",
+                "type": "png"
+            },
+            {
+                "file": "images/circle.png",
+                "name": "WALL_CIRCLE",
                 "type": "png"
             },
             {
@@ -35,33 +70,18 @@
                 "type": "png"
             },
             {
-                "file": "images/circle.png",
-                "name": "WALL_CIRCLE",
+                "file": "images/floor.png",
+                "name": "FLOOR_TILE",
                 "type": "png"
             },
             {
-                "file": "images/fifty.png",
-                "name": "WALL_FIFTY",
+                "file": "images/ceiling.png",
+                "name": "CEILING_LIGHTS",
                 "type": "png"
             },
             {
-                "file": "images/brick.png",
-                "name": "WALL_BRICK",
-                "type": "png"
-            },
-            {
-                "file": "images/Smiley.png",
-                "name": "SPRITE_SMILEY",
-                "type": "png"
-            },
-            {
-                "file": "images/Smiley-Mask.png",
-                "name": "SPRITE_SMILEY_MASK",
-                "type": "png"
-            },
-            {
-                "file": "images/grass.png",
-                "name": "GRASS",
+                "file": "images/texture.png",
+                "name": "STONE",
                 "type": "png"
             }
         ]

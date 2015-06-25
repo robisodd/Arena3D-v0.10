@@ -7,7 +7,7 @@
 #define IF_BWCOLOR(x,y) COLOR_FALLBACK(x, y)
   
 #define mapsize 21             // Map is mapsize x mapsize squares big
-#define MAX_TEXTURES 10        // Most number of textures there's likely to be.  Feel free to increase liberally, but no more than 254.
+#define MAX_TEXTURES 15        // Most number of textures there's likely to be.  Feel free to increase liberally, but no more than 254.
 #define IDCLIP false           // Walk thru walls
 #define view_border true       // Draw border around 3D viewing window
 
@@ -42,6 +42,15 @@ typedef struct RayStruct {
    int32_t offset;            // horizontal spot on texture the ray hit [0-63] (used in memory pointers so int32_t)
    uint8_t face;              // face of the block it hit (00=East Wall, 01=North, 10=West, 11=South Wall)
 } RayStruct;
+
+typedef struct TextureStruct {
+  GBitmap *bmp;
+  //picture type: 1bit, 4bit
+  //pointer to picture data
+  uint8_t* palette;  //palette (unused in B&W)
+  //NOTE: All 1bit images need to be in GBitmapFormat1BitPalette, not GBitmapFormat1Bit
+  
+} TextureStruct;
 
 int32_t sqrt32(int32_t a);
 int32_t sqrt_int(int32_t a, int8_t depth);

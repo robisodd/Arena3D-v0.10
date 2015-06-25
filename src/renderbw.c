@@ -26,9 +26,9 @@ void fill_window(GContext *ctx, uint8_t *data) {
 }
 
 void draw_textbox(GContext *ctx, GRect textframe, char *text) {
-    graphics_context_set_fill_color(ctx, 0);   graphics_fill_rect(ctx, textframe, 0, GCornerNone);  //Black Solid Rectangle
-    graphics_context_set_stroke_color(ctx, 1); graphics_draw_rect(ctx, textframe);                //White Rectangle Border  
-    graphics_context_set_text_color(ctx, 1);  // White Text
+    graphics_context_set_fill_color(ctx, GColorBlack);   graphics_fill_rect(ctx, textframe, 0, GCornerNone);  //Black Solid Rectangle
+    graphics_context_set_stroke_color(ctx, GColorWhite); graphics_draw_rect(ctx, textframe);                //White Rectangle Border  
+    graphics_context_set_text_color(ctx, GColorWhite);  // White Text
     graphics_draw_text(ctx, text, fonts_get_system_font(FONT_KEY_GOTHIC_14), textframe, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);  //Write Text
 }
 
@@ -161,7 +161,7 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
 
 
  
-  uint8_t numobjects=1;
+  uint8_t numobjects=1;  // number of sprites
   int32_t spritecol, objectdist;  //, xoffset, yoffset;
 //if(false)  // enable/disable drawing of sprites
   for(uint8_t obj=0; obj<numobjects; obj++) {

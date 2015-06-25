@@ -2,7 +2,10 @@
 
 uint8_t map[mapsize * mapsize];  // 0-255, 0-127 are squaretypes[], high bit set means ray hits wall
 
+// TODO: Texture[] should be object with
 GBitmap *texture[MAX_TEXTURES];
+uint8_t *texpal[MAX_TEXTURES];
+uint8_t *texdat[MAX_TEXTURES];
 GBitmap *sprite_image[1];
 GBitmap *sprite_mask[1];
 
@@ -28,37 +31,60 @@ int8_t  sign8 (int8_t  x){return (x > 0) - (x < 0);}
 int16_t sign16(int16_t x){return (x > 0) - (x < 0);}
 int32_t sign32(int32_t x){return (x > 0) - (x < 0);}
 
+#ifdef PBL_COLOR
+  //GColor testpal[2]={{.argb=0b11000000},{.argb=0b11110000}};
+  GColor testpal[2]={{.argb=0b11000000},{.argb=0b11111111}};
+  //GColor testpal2[]={{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0},{.argb=0}};
+  //testpal[0] = GColorOrange;
+  //testpal[1] = GColorBlue;
+#endif
 
+  
 void LoadMapTextures() {
+ 
+  const int Texture_Resources[] = {
+    RESOURCE_ID_STONE,          //0
+    RESOURCE_ID_WALL_FIFTY,     //1
+    RESOURCE_ID_WALL_CIRCLE,    //2
+    RESOURCE_ID_FLOOR_TILE,     //3
+    RESOURCE_ID_CEILING_LIGHTS, //4
+    RESOURCE_ID_WALL_BRICK,     //5
+    //RESOURCE_ID_GRASS,
+    RESOURCE_ID_REDBRICK,       //6
+    RESOURCE_ID_WOOD16,         //7
+    RESOURCE_ID_PrizeBox,       //8
+    RESOURCE_ID_GRASS64,        //9
+    RESOURCE_ID_TEST            //10
+  };
   
-/*
-TODO: Change below to this:
-  const int RESOURCES[] = {
-  RESOURCE_ID_STONE,
-  RESOURCE_ID_WALL_FIFTY,
-  RESOURCE_ID_WALL_CIRCLE,
-  RESOURCE_ID_FLOOR_TILE,
-  RESOURCE_ID_CEILING_LIGHTS,
-  RESOURCE_ID_WALL_BRICK,
-  RESOURCE_ID_GRASS,
-  RESOURCE_ID_REDBRICK
-};
-for(int i=0; i<length of RESOURCES; ++i)
-  texture[i] = gbitmap_create_with_resource(RESOURCES[i]);
-*/
-  
-  texture[0] = gbitmap_create_with_resource(RESOURCE_ID_STONE);
-  texture[1] = gbitmap_create_with_resource(RESOURCE_ID_WALL_FIFTY);
-  texture[2] = gbitmap_create_with_resource(RESOURCE_ID_WALL_CIRCLE);
-  texture[3] = gbitmap_create_with_resource(RESOURCE_ID_FLOOR_TILE);
-  texture[4] = gbitmap_create_with_resource(RESOURCE_ID_CEILING_LIGHTS);
-  texture[5] = gbitmap_create_with_resource(RESOURCE_ID_WALL_BRICK);
-  texture[6] = gbitmap_create_with_resource(RESOURCE_ID_GRASS);
-  texture[7] = gbitmap_create_with_resource(RESOURCE_ID_REDBRICK);
+  for(int i=0; i<MAX_TEXTURES; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%d", i);
+    texture[i] = gbitmap_create_with_resource(Texture_Resources[i]);
+    
+    if(texture[i]==NULL) {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Failed to load texture: %d", i);
+    } else {
+      #ifdef PBL_COLOR
+        if(gbitmap_get_format(texture[i])==GBitmapFormat1Bit)
+          gbitmap_set_data(texture[i], gbitmap_get_data(texture[i]), GBitmapFormat1BitPalette, gbitmap_get_bytes_per_row(texture[i]), true);
+      
+        if(gbitmap_get_format(texture[i])==GBitmapFormat1BitPalette)  
+          gbitmap_set_palette(texture[i], testpal, false);
+        
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "%d: %d %d %lx", i, gbitmap_get_bytes_per_row(texture[i]), gbitmap_get_format(texture[i]), (uint32_t)gbitmap_get_palette(texture[i]));
+      
+        texpal[i] = (uint8_t*)gbitmap_get_palette(texture[i]);
+        texdat[i] = (uint8_t*)gbitmap_get_data(texture[i]);
+      
+      #endif
+      
+    // popup message
+    // Test:
+    // Is width & height = 64px
+    // is successful at loading into memory
+    }
+}
 
-  //APP_LOG(APP_LOG_LEVEL_DEBUG, "Grass:    %d", gbitmap_get_bytes_per_row(texture[6]));
-  //APP_LOG(APP_LOG_LEVEL_DEBUG, "Redbrick: %d", gbitmap_get_bytes_per_row(texture[7]));
-  
   
   // TODO: Change to: SPRITE[number of sprites][2] (image/mask)
   sprite_image[0] = gbitmap_create_with_resource(RESOURCE_ID_SPRITE_SMILEY);
@@ -74,12 +100,12 @@ void UnLoadMapTextures() {
 void GenerateSquareMap() {
   //Type 0 is how to render out-of-bounds
   squaretype[0].ceiling = 255; // outside sky
-  squaretype[0].floor   = 6;   // outside grass
-  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=1; // was 5
+  squaretype[0].floor   = 9;   // outside grass
+  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=10; // was 5
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=7; //5 for 1bit image
-  squaretype[1].ceiling = 4;
-  squaretype[1].floor   = 3;
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=10;//7; //5 for 1bit image
+  squaretype[1].ceiling = 10;//4;
+  squaretype[1].floor   = 10;//3;
   
   for (int16_t i=0; i<mapsize*mapsize; i++)
     map[i] = 1;                            // inside floor/ceiling
@@ -126,16 +152,19 @@ void GenerateRandomMap() {
 
 // Generates maze starting from startx, starty, filling map with (0=empty, 1=wall, -1=special)
 void GenerateMazeMap(int32_t startx, int32_t starty) {
+  // Outside Type
   squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=0;
   squaretype[0].ceiling = 255;
-  squaretype[0].floor = 6;
+  squaretype[0].floor = 9;//6;  Grass
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=7;
+  //Wall and Empty
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=10;//6;
   squaretype[1].ceiling = 4;
   squaretype[1].floor = 3;
   
-  squaretype[2].ceiling = 2;
-  squaretype[2].floor = 4;
+  // Special
+  squaretype[2].ceiling = 8;
+  squaretype[2].floor = 8;
 
   int32_t x, y;
   int8_t try;
@@ -146,13 +175,14 @@ void GenerateMazeMap(int32_t startx, int32_t starty) {
   
   while(true) {
     int32_t current = cursory * mapsize + cursorx;
-    if((map[current] & 15) == 15) {  // If all directions have been tried, then go to previous cell unless you're back at the start
-      if(cursory==starty && cursorx==startx) {  // If back at the start, then we're done.
+    if((map[current] & 15) == 15) {              // If all directions have been tried, then go to previous cell (unless you're back at the start)
+      if(cursory==starty && cursorx==startx) {   // If back at the start, then we're done.
         map[current]=1;
-        for (int16_t i=0; i<mapsize*mapsize; i++) if(map[i]==0) map[i] = 128+1; // invert map bits (1=empty, 128+1=wall, 2=special)
-        return;
+        for (int16_t i=0; i<mapsize*mapsize; i++)
+          if(map[i]==0) map[i] = 128+1;          // invert map bits (1=empty, 128+1=wall, 2=special)
+        return;                                  // Maze is completed!
       }
-      switch(map[current] >> 4) { // Else go back to the previous cell:  NOTE: If the 1st two bits are used, need to "&3" mask this
+      switch(map[current] >> 4) {                // Else go back to the previous cell:  NOTE: If the 1st two bits are used, need to "&3" mask this
        case 0: cursorx++; break;
        case 1: cursory++; break;
        case 2: cursorx--; break;

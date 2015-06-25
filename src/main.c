@@ -56,10 +56,10 @@
         Added single color to 1bit textures
         
   v0.11:Added 16color texture walls
-        Changed for(; y<colheight; y++, yoffset+=144) to for(; y<=colheight; y++, yoffset+=144) to fix ground showing below wall
+        Changed for(; y<colheight; y++, yoffset+=144) to for(; y<=colheight; y++, yoffset+=144) to fix ground showing below wall when outside
         
   To Do:
-        Maybe X&Y coordinates can be int16 (max board of 512x512=256kB)
+        Maybe X&Y coordinates can be int16 ([-32768-32767] @ 64px per block = [-512-511]: max board of 512x512=256kB)
         Texture looping
         Add switches on walls to change cells
         Open doors
@@ -172,17 +172,7 @@ Layer *graphics_layer;
 //  Map Functions
 // ------------------------------------------------------------------------ //
 
-static void main_loop(void *data) {
-  AccelData accel=(AccelData){.x=0, .y=0, .z=0};          // all three are int16_t
-  accel_service_peek(&accel);                             // read accelerometer
-  walk(player.facing, accel.y>>5);                        // walk based on accel.y
-  if(dn_button_depressed)                                 // if down button is held
-    walk(player.facing + (1<<14), accel.x>>5);            //   strafe (1<<14 = TRIG_MAX_ANGLE / 4)
-  else                                                    // else
-    player.facing = (player.facing + (accel.x<<3));       //   spin
-  
-  //if(dn_button_depressed) player.facing = (player.facing + 300);       //   if dn is held, spin
-  
+static void main_loop(void *data) { 
   layer_mark_dirty(graphics_layer);                       // tell pebble to draw when it's ready
 }
 
@@ -190,54 +180,53 @@ static void main_loop(void *data) {
 static void graphics_layer_update_proc(Layer *me, GContext *ctx) {
   static char text[40];  //Buffer to hold text
   time_t sec1, sec2; uint16_t ms1, ms2, dt; // time snapshot variables, to calculate render time and FPS
+  
+  AccelData accel=(AccelData){.x=0, .y=0, .z=0};          // all three are int16_t
+  accel_service_peek(&accel);                             // read accelerometer
+  walk(player.facing, accel.y>>5);                        // walk based on accel.y
+  if(dn_button_depressed)                                 // if down button is held
+    walk(player.facing + (1<<14), accel.x>>5);            //   strafe (1<<14 = TRIG_MAX_ANGLE / 4)
+  else                                                    // else
+    player.facing = (player.facing + (accel.x<<3));       //   spin
+  //if(dn_button_depressed) player.facing = (player.facing + 300);   //   if dn is held, spin (for testing in emulator)
+  
   time_ms(&sec1, &ms1);  //1st Time Snapshot
   
   //draw_3D(ctx,  GRect(view_x, view_y, view_w, view_h));
   //draw_3D(ctx,  GRect(1, 34, 142, 128));
   draw_3D(ctx,  GRect(1, 22, 142, 144));
-//  draw_3D(ctx,  GRect(4, 110, 40, 40));
+  //draw_3D(ctx,  GRect(4, 110, 40, 40));  // 2nd mini-render
    draw_map(ctx, GRect(4, 110, 40, 40), 4);
   
   time_ms(&sec2, &ms2);  //2nd Time Snapshot
-  dt = (uint16_t)(1000*(sec2 - sec1)) + (ms2 - ms1);  //dt=delta time: time between two time snapshots in milliseconds
+  dt = (uint16_t)(1000*(sec2 - sec1)) + ((int16_t)ms2 - (int16_t)ms1);  //dt=delta time: time between two time snapshots in milliseconds
   
-  
-  
-	//int16_t  w 	= gbitmap_get_bounds(texture[7]).size.w;
-// 	int16_t  h 	= gbitmap_get_bounds(texture[7]).size.h;
-  //int16_t  h 	= gbitmap_get_bytes_per_row(texture[7]);
-  
-    
   snprintf(text, sizeof(text), "(%ld,%ld) %ldms %ldfps", (long)player.x, (long)player.y, (long)dt, (long)(1000/dt));  // What text to draw
-  
-//snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps\n%ld %ld", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt), (long)w, (long)h);  // What text to draw
-//   snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt));  // What text to draw
-//   snprintf(text, sizeof(text), "%db (%ld,%ld) %d\n%ld %ld %ld %ld %ld", heap_bytes_free(), player.x, player.y, player.facing, Q1,Q2,Q3,Q4,Q5);  // What text to draw
+  //snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps\n%ld %ld", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt), (long)w, (long)h);  // What text to draw
+  //snprintf(text, sizeof(text), "(%ld,%ld) %ld %ldms %ldfps", (long)player.x, (long)player.y, (long)player.facing, (long)dt, (long)(1000/dt));  // What text to draw
+  //snprintf(text, sizeof(text), "%db (%ld,%ld) %d\n%ld %ld %ld %ld %ld", heap_bytes_free(), player.x, player.y, player.facing, Q1,Q2,Q3,Q4,Q5);  // What text to draw
   //draw_textbox(ctx, GRect(0, 0, 143, 32), text);
-  
   draw_textbox(ctx, GRect(0, 0, 143, 20), text);
    
-  //  Set a timer to restart loop in 50ms
-  if(dt<40 && dt>0) // if time to render is less than 40ms, force framerate of 20FPS or worse
-     app_timer_register(50-dt, main_loop, NULL); // 10FPS
-  else
-     app_timer_register(10, main_loop, NULL);     // took longer than 40ms, loop  in 10ms (asap)
+  if(dt<50)                                      // If it took less than 50ms to render
+     app_timer_register(50-dt, main_loop, NULL); // Force framerate of 20FPS
+  else                                           // Else
+    app_timer_register(1, main_loop, NULL);      // Draw ASAP!
 }
 
 // ------------------------------------------------------------------------ //
 //  Button Pushing
 // ------------------------------------------------------------------------ //
 void up_push_in_handler(ClickRecognizerRef recognizer, void *context) {up_button_depressed = true;
-                                                                      GenerateMazeMap(mapsize/2, 0);
+                                                                       GenerateMazeMap(mapsize/2, 0);  // Generate maze, put enterance on middle of North side
                                                                       }
 void up_release_handler(ClickRecognizerRef recognizer, void *context) {up_button_depressed = false;}
 void dn_push_in_handler(ClickRecognizerRef recognizer, void *context) {dn_button_depressed = true;}
 void dn_release_handler(ClickRecognizerRef recognizer, void *context) {dn_button_depressed = false;}
 void sl_push_in_handler(ClickRecognizerRef recognizer, void *context) {sl_button_depressed = true;   // SELECT button was pushed in
   shoot_ray(player.x, player.y, player.facing);             // Shoot Ray from center of screen.  If it hit something:
-  //if(ray.hit>127) 
+  //if(ray.hit>127) // If ray hit a block. -- Removed as it will always hit a block (or go out of bounds, which setmap can handle)
   setmap(ray.x, ray.y, ray.hit&127); // If you shoot a block, remove it.
-  //if(ray.hit==128+1) setmap(ray.x, ray.y, 1);   // If Ray hit normal block(1), change it to a Circle Block (3) (Changed from Mirror Block(4), as it was confusing)
   //if(ray.hit==128+3) setmap(ray.x, ray.y, 1);   // If Ray hit Circle Block(3), change it to a Normal Block (1)
 }
 void sl_release_handler(ClickRecognizerRef recognizer, void *context) {sl_button_depressed = false;}
