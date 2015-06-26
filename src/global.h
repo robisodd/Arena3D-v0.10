@@ -6,7 +6,8 @@
 #define IF_BW(x)        COLOR_FALLBACK((void)0, x)
 #define IF_BWCOLOR(x,y) COLOR_FALLBACK(x, y)
   
-#define mapsize 21             // Map is mapsize x mapsize squares big
+//#define mapsize 21             // Map is mapsize x mapsize squares big
+#define mapsize 5             // Map is mapsize x mapsize squares big
 #define MAX_TEXTURES 15        // Most number of textures there's likely to be.  Feel free to increase liberally, but no more than 254.
 #define IDCLIP false           // Walk thru walls
 #define view_border true       // Draw border around 3D viewing window

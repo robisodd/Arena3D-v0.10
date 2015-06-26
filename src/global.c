@@ -6,6 +6,7 @@ uint8_t map[mapsize * mapsize];  // 0-255, 0-127 are squaretypes[], high bit set
 GBitmap *texture[MAX_TEXTURES];
 uint8_t *texpal[MAX_TEXTURES];
 uint8_t *texdat[MAX_TEXTURES];
+GBitmapFormat texformat[MAX_TEXTURES];
 GBitmap *sprite_image[1];
 GBitmap *sprite_mask[1];
 
@@ -40,21 +41,43 @@ int32_t sign32(int32_t x){return (x > 0) - (x < 0);}
 #endif
 
   
+  
+// get_gbitmapformat_text from: https://github.com/rebootsramblings/GBitmap-Colour-Palette-Manipulator/blob/master/src/gbitmap_color_palette_manipulator.c
+#ifdef PBL_COLOR
+char* get_gbitmapformat_text(GBitmapFormat format) {
+	switch (format) {
+		case GBitmapFormat1Bit: return "GBitmapFormat1Bit";
+		case GBitmapFormat8Bit: return "GBitmapFormat8Bit";
+		case GBitmapFormat1BitPalette: return "GBitmapFormat1BitPalette";
+		case GBitmapFormat2BitPalette: return "GBitmapFormat2BitPalette";
+		case GBitmapFormat4BitPalette: return "GBitmapFormat4BitPalette";
+		default: return "UNKNOWN FORMAT";
+	}
+}
+#endif
 void LoadMapTextures() {
  
-  const int Texture_Resources[] = {
+  const int Texture_Resources1[] = {
     RESOURCE_ID_STONE,          //0
-    RESOURCE_ID_WALL_FIFTY,     //1
-    RESOURCE_ID_WALL_CIRCLE,    //2
-    RESOURCE_ID_FLOOR_TILE,     //3
-    RESOURCE_ID_CEILING_LIGHTS, //4
-    RESOURCE_ID_WALL_BRICK,     //5
+//    RESOURCE_ID_WALL_FIFTY,     //1
+    RESOURCE_ID_WALL_CIRCLE,    //1
+    RESOURCE_ID_FLOOR_TILE,     //2
+    RESOURCE_ID_CEILING_LIGHTS, //3
+    RESOURCE_ID_WALL_BRICK,     //4
     //RESOURCE_ID_GRASS,
-    RESOURCE_ID_REDBRICK,       //6
-    RESOURCE_ID_WOOD16,         //7
-    RESOURCE_ID_PrizeBox,       //8
-    RESOURCE_ID_GRASS64,        //9
-    RESOURCE_ID_TEST            //10
+    RESOURCE_ID_REDBRICK,       //5
+    RESOURCE_ID_WOOD16,         //6
+    RESOURCE_ID_PrizeBox,       //7
+    RESOURCE_ID_GRASS64,        //8
+    RESOURCE_ID_TEST2           //9
+  };
+  
+  
+  const int Texture_Resources[] = {
+    RESOURCE_ID_TEST2,            // 0
+    RESOURCE_ID_TEST4,            // 1
+    RESOURCE_ID_TEST16,           // 2
+    RESOURCE_ID_REDBRICK          // 3
   };
   
   for(int i=0; i<MAX_TEXTURES; ++i) {
@@ -71,16 +94,18 @@ void LoadMapTextures() {
         if(gbitmap_get_format(texture[i])==GBitmapFormat1BitPalette)  
           gbitmap_set_palette(texture[i], testpal, false);
         
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "%d: %d %d %lx", i, gbitmap_get_bytes_per_row(texture[i]), gbitmap_get_format(texture[i]), (uint32_t)gbitmap_get_palette(texture[i]));
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "%d: %d %s %lx", i, gbitmap_get_bytes_per_row(texture[i]), get_gbitmapformat_text(gbitmap_get_format(texture[i])), (uint32_t)gbitmap_get_palette(texture[i]));
       
         texpal[i] = (uint8_t*)gbitmap_get_palette(texture[i]);
         texdat[i] = (uint8_t*)gbitmap_get_data(texture[i]);
+      texformat[i] = (uint8_t)gbitmap_get_format(texture[i]);
       
       #endif
       
     // popup message
     // Test:
     // Is width & height = 64px
+    // If full 64 color image, disregard as 3D function won't render it
     // is successful at loading into memory
     }
 }
@@ -99,22 +124,27 @@ void UnLoadMapTextures() {
 
 void GenerateSquareMap() {
   //Type 0 is how to render out-of-bounds
-  squaretype[0].ceiling = 255; // outside sky
-  squaretype[0].floor   = 9;   // outside grass
-  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=10; // was 5
+//   squaretype[0].ceiling = 255; // outside sky
+//   squaretype[0].floor   = 9;   // outside grass
+//   squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=0; // was 5
 
-  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=10;//7; //5 for 1bit image
-  squaretype[1].ceiling = 10;//4;
-  squaretype[1].floor   = 10;//3;
+//   squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=0;//7; //5 for 1bit image
+//   squaretype[1].ceiling = 10;//4;
+//   squaretype[1].floor   = 10;//3;
+  
+  squaretype[0].face[0]=squaretype[0].face[1]=squaretype[0].face[2]=squaretype[0].face[3]=2; squaretype[0].floor=squaretype[0].ceiling=2;
+  squaretype[1].face[0]=squaretype[1].face[1]=squaretype[1].face[2]=squaretype[1].face[3]=2; squaretype[1].floor=squaretype[1].ceiling=2;
+  squaretype[2].face[0]=squaretype[2].face[1]=squaretype[2].face[2]=squaretype[2].face[3]=2; squaretype[2].floor=squaretype[2].ceiling=2;
+  squaretype[3].face[0]=squaretype[3].face[1]=squaretype[3].face[2]=squaretype[3].face[3]=2; squaretype[3].floor=squaretype[3].ceiling=2;
   
   for (int16_t i=0; i<mapsize*mapsize; i++)
     map[i] = 1;                            // inside floor/ceiling
   
   for (int16_t i=0; i<mapsize; i++) {
-    map[i*mapsize + 0]           = 128+1;  // west wall
+    map[i*mapsize + 0]           = 128+0;  // west wall               128+1 for all
     map[i*mapsize + mapsize - 1] = 128+1;  // east wall
-    map[i]                       = 128+1;  // north wall
-    map[(mapsize-1)*mapsize + i] = 128+1;  // south wall
+    map[i]                       = 128+2;  // north wall
+    map[(mapsize-1)*mapsize + i] = 128+3;  // south wall
   }
   map[((mapsize/2) * mapsize) + (mapsize/2)] = 128+1;  // middle block
 

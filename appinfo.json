@@ -9,8 +9,18 @@
     "resources": {
         "media": [
             {
-                "file": "images/test.png",
-                "name": "TEST",
+                "file": "images/test-16color.png",
+                "name": "TEST16",
+                "type": "png"
+            },
+            {
+                "file": "images/test-2color.png",
+                "name": "TEST2",
+                "type": "png"
+            },
+            {
+                "file": "images/test-4color.png",
+                "name": "TEST4",
                 "type": "png"
             },
             {
@@ -51,11 +61,6 @@
             {
                 "file": "images/brick.png",
                 "name": "WALL_BRICK",
-                "type": "png"
-            },
-            {
-                "file": "images/fifty.png",
-                "name": "WALL_FIFTY",
                 "type": "png"
             },
             {

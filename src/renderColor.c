@@ -14,6 +14,7 @@ extern RayStruct ray;
 extern GBitmap *texture[MAX_TEXTURES];
 extern uint8_t *texpal[MAX_TEXTURES];
 extern uint8_t *texdat[MAX_TEXTURES];
+extern GBitmapFormat texformat[MAX_TEXTURES];
 extern GBitmap *sprite_image[1];
 extern GBitmap *sprite_mask[1];
 extern Layer *graphics_layer;
@@ -98,7 +99,8 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
   int32_t farthest = 0; //colh, z;
   int32_t y, colheight, halfheight;
   uint32_t x, addr, xaddr, yaddr, xbit, xoffset, yoffset;
-  uint32_t *target, *mask;
+  //uint32_t *target, *mask;
+  uint8_t *target;
   uint8_t *palette;
   
 ///  int32_t dist[144];                 // Array of non-cos adjusted distance for each vertical wall segment -- for sprite rendering
@@ -197,11 +199,11 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
     //1px = x (1 bit per pixel, 2 colors)
     //aaaaaaaa bbbbbbbb cccccccc dddddddd eeeeeeee ffffffff gggggggg hhhhhhhh = 1 Row
     
-      //4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-      //64px / 32Bytes/row = 2px/Byte = 4bits/px
-      //1px = xxxx (4 bits per pixel, 16 colors)
-      //aaaabbbb ccccdddd eeeeffff gggghhhh = XXXX (1 set of 32bits (= 8 pixels))
-      //AAAA BBBB CCCC DDDD (mid) EEEE FFFF GGGG HHHH = row (1 row = 8 sets of 32bits (= 8 sets of 8 pixels = 64 pixels))
+    //4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+    //64px / 32Bytes/row = 2px/Byte = 4bits/px
+    //1px = xxxx (4 bits per pixel, 16 colors)
+    //aaaabbbb ccccdddd eeeeffff gggghhhh = XXXX (1 set of 32bits (= 8 pixels))
+    //AAAA BBBB CCCC DDDD (mid) EEEE FFFF GGGG HHHH = row (1 row = 8 sets of 32bits (= 8 sets of 8 pixels = 64 pixels))
     
     // 2bits/px (4 color)
     // 64px / 16Bytes/row = 4px/Byte = 2bits/px
@@ -210,44 +212,56 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
     // AAAA BBBB (mid) CCCC DDDD = row (1 row = 4 sets of 32bits (= 4 sets of 16 pixels = 64 pixels))
 
     
+    // 2bits/px (4 color)
+    // 64px / 16Bytes/row = 4px/Byte = 2bits/px
+    // 1px = xx (2 bits per pixel, 4 colors)
+    // aabbccdd = X (1 Byte = 4 pixels)
+    // ABCD EFG*H* (mid) IJKL MNOP = row (1 row = 16 Bytes * 4px/Byte = 64 pixels)
+    
     // Draw Color Walls
     palette = texpal[squaretype[ray.hit].face[ray.face]];
-    target = (uint32_t*)texdat[squaretype[ray.hit].face[ray.face]]; // Puts pointer at texture beginning // maybe use GBitmap's size veriables to store texture size?
+    target = (uint8_t*)texdat[squaretype[ray.hit].face[ray.face]]; // Puts pointer at texture beginning // maybe use GBitmap's size veriables to store texture size?
     x = col+box.origin.x;  // X screen coordinate
     addr = x + ((box.origin.y + halfheight) * 144); // address of pixel vertically centered at X. (Address=xaddr + yaddr = Pixel.X + 144*Pixel.Y)
     y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*144)
     
-    
-    if(gbitmap_get_format(texture[squaretype[ray.hit].face[ray.face]])==GBitmapFormat1BitPalette) {// IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
-      target += ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
-      for(; y<colheight; y++, yoffset+=144) {
-        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-        screen[addr - yoffset] = palette[((*(target  ) >> (31-xoffset))&1)];  // Draw Top Half
-        screen[addr + yoffset] = palette[((*(target+1) >> (   xoffset))&1)];  // Draw Bottom Half
-      }
-    } else if(gbitmap_get_format(texture[squaretype[ray.hit].face[ray.face]])==GBitmapFormat2BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-      target += ray.offset*4;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row
-      target += 2 - 1; // puts pointer at (mid) of row (4 changes depending on palette)
-      
-      for(; y<=colheight; ++y, yoffset+=144) {
-        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-        screen[addr - yoffset] = palette[(*(target     - (xoffset>>4)) >> ((15-(xoffset&15))*2) )&3];  // Draw Top Half
-        screen[addr + yoffset] = palette[(*(target + 1 + (xoffset>>4)) >> (    (xoffset&15) *2) )&3];  // Draw Bottom Half
-      }
-    } else if(gbitmap_get_format(texture[squaretype[ray.hit].face[ray.face]])==GBitmapFormat4BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-      target += ray.offset*8;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row
-      target += 4 - 1; // puts pointer at (mid) of row (4 changes depending on palette)
-      
-      for(; y<=colheight; ++y, yoffset+=144) {
-        xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-        screen[addr - yoffset] = palette[(*(target     - (xoffset>>3)) >> ((7-(xoffset&7))*4) )&15];  // Draw Top Half
-        screen[addr + yoffset] = palette[(*(target + 1 + (xoffset>>3)) >> (   (xoffset&7) *4) )&15];  // Draw Bottom Half
-      }
-    } else {
-      for(; y<=colheight; ++y, yoffset+=144) {
-        screen[addr - yoffset] = 0b11001100;
-        screen[addr + yoffset] = 0b11001100;
-      }      
+    //uint8_t format = (uint8_t)gbitmap_get_format(texture[squaretype[ray.hit].face[ray.face]]);
+    switch(texformat[squaretype[ray.hit].face[ray.face]]) {
+      case GBitmapFormat1BitPalette: {// IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
+        target += ray.offset<<3;//*8;   // maybe use GBitmap's size veriables to store texture size?  // * 8 = 8 bytes per row
+        target += 4 - 1;          // 4 = half of 8 Bytes/row
+        for(; y<colheight; y++, yoffset+=144) {
+          xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+          screen[addr - yoffset] = palette[(*(target     - (xoffset>>3)) >> ((  (xoffset&7))<<0)&1)];  // Draw Top Half   <<0 (*1) is because 1 bit per pixel
+          screen[addr + yoffset] = palette[(*(target + 1 + (xoffset>>3)) >> ((7-(xoffset&7))<<0)&1)];  // Draw Bottom Half
+        }
+      } break;
+      case GBitmapFormat2BitPalette: { // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+        target += ray.offset<<4;//*16;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row  // * 16 = 16 Bytes per row
+        target += 8 - 1;          // puts pointer at (mid) of row // 8 = half of 16 bytes/row
+        for(; y<=colheight; ++y, yoffset+=144) {
+          xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+          screen[addr - yoffset] = palette[(*(target     - (xoffset>>2)) >> ((  (xoffset&3))<<1) )&3];  // Draw Top Half  // &3 (0-3=4) cause 4 pixels inside byte.  <<1 (*2) is cause 2 bits per pixel
+          screen[addr + yoffset] = palette[(*(target + 1 + (xoffset>>2)) >> ((3-(xoffset&3))<<1) )&3];  // Draw Bottom Half
+        }
+
+      } break;
+      case GBitmapFormat4BitPalette: { // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+        target += ray.offset<<5;//*32;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row  //*32 = 32Bytes per Row
+        target += 16 - 1;         // puts pointer at (mid) of row (4 changes depending on palette)  // half of 32Bytes/row
+        for(; y<=colheight; ++y, yoffset+=144) {
+          xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
+          screen[addr - yoffset] = palette[(*(target     - (xoffset>>1)) >> ((  (xoffset&1))<<2) )&15];  // Draw Top Half  // &1 cause 2 pixels inside byte.  *4 cause 4 bits wide per pixel.
+          screen[addr + yoffset] = palette[(*(target + 1 + (xoffset>>1)) >> ((1-(xoffset&1))<<2) )&15];  // Draw Bottom Half
+        }
+
+      } break;
+      default: {
+        for(; y<=colheight; ++y, yoffset+=144) {
+          screen[addr - yoffset] = 0b11110011;
+          screen[addr + yoffset] = 0b11001100;
+        }
+      } break;
     }
   
 
@@ -270,25 +284,54 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
 
       
       if(squaretype[ray.hit].floor<MAX_TEXTURES) {   // If floor texture exists (else just show abyss)
-        if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat1BitPalette) {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
-          screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + (map_x<<3) + (map_y>>3))) >> ((map_y&7)))&1)];// ? 0b11001100 : 0b11000000;
-        } else if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat2BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-          screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + (map_x<<4) + (map_y>>2))) >> (((map_y&3))<<1))&3)];
-        } else if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat4BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-          screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + (map_x<<5) + (map_y>>1))) >> (((map_y&1))<<2))&15)];
+        switch(texformat[squaretype[ray.hit].floor]) {
+          case GBitmapFormat1BitPalette: {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
+            screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<3) + (map_y>>3))) >> (7-(map_y&7)))&1)];// ? 0b11001100 : 0b11000000;
+          } break;
+          case GBitmapFormat2BitPalette: {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+            screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<4) + (map_y>>2))) >> ((3-(map_y&3))<<1))&3)];
+          } break;
+          case GBitmapFormat4BitPalette: {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+            screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<5) + (map_y>>1))) >> ((1-(map_y&1))<<2))&15)];
+          } break;
+          default: ;
+        }
+      }        
+      if(squaretype[ray.hit].ceiling<MAX_TEXTURES) { // If ceiling texture exists (else just show sky)
+        switch(texformat[squaretype[ray.hit].ceiling]) {
+          case GBitmapFormat1BitPalette: {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
+            screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<3) + (map_y>>3))) >> (7-(map_y&7)))&1)];// ? 0b11110100 : 0b11000000;
+          } break;
+          case GBitmapFormat2BitPalette: {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+            screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<4) + (map_y>>2))) >> ((3-(map_y&3))<<1))&3)];
+          } break;
+          case GBitmapFormat4BitPalette: {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+            screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<5) + (map_y>>1))) >> ((1-(map_y&1))<<2))&15)];
+          } break;
+          default: ;
         }
       }
+
       
 
-      if(squaretype[ray.hit].ceiling<MAX_TEXTURES) { // If ceiling texture exists (else just show sky)
-        if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat1BitPalette) {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
-          screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<3) + (map_y>>3))) >> (7-(map_y&7)))&1)];// ? 0b11110100 : 0b11000000;
-        } else if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat2BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-          screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<4) + (map_y>>2))) >> ((3-(map_y&3))<<1))&3)];
-        } else if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat4BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
-          screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<5) + (map_y>>1))) >> ((1-(map_y&1))<<2))&15)];
-        }
-      }
+//       if(squaretype[ray.hit].floor<MAX_TEXTURES) {   // If floor texture exists (else just show abyss)
+//         if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat1BitPalette) {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
+//           screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<3) + (map_y>>3))) >> (7-(map_y&7)))&1)];// ? 0b11001100 : 0b11000000;
+//         } else if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat2BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+//           screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<4) + (map_y>>2))) >> ((3-(map_y&3))<<1))&3)];
+//         } else if(gbitmap_get_format(texture[squaretype[ray.hit].floor])==GBitmapFormat4BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+//           screen[addr + yoffset] = texpal[squaretype[ray.hit].floor][(((*(texdat[squaretype[ray.hit].floor] + ((63-map_x)<<5) + (map_y>>1))) >> ((1-(map_y&1))<<2))&15)];
+//         }
+//       }
+//       if(squaretype[ray.hit].ceiling<MAX_TEXTURES) { // If ceiling texture exists (else just show sky)
+//         if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat1BitPalette) {  // IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
+//           screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<3) + (map_y>>3))) >> (7-(map_y&7)))&1)];// ? 0b11110100 : 0b11000000;
+//         } else if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat2BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+//           screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<4) + (map_y>>2))) >> ((3-(map_y&3))<<1))&3)];
+//         } else if(gbitmap_get_format(texture[squaretype[ray.hit].ceiling])==GBitmapFormat4BitPalette) {  // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
+//           screen[addr - yoffset] = texpal[squaretype[ray.hit].ceiling][(((*(texdat[squaretype[ray.hit].ceiling] + (map_x<<5) + (map_y>>1))) >> ((1-(map_y&1))<<2))&15)];
+//         }
+//       }
       
       
 //       map_x&=63; map_y&=63; // Get position on texture

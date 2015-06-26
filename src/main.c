@@ -145,7 +145,7 @@ Definitions:
   *********************************************************************************/
 // 529a7262-efdb-48d4-80d4-da14963099b9
 #include "global.h"
-
+  
 extern uint8_t map[mapsize * mapsize];  // 0-255, 0-127 are squaretypes[], high bit set means ray hits wall
 
 extern GBitmap *texture[MAX_TEXTURES];
@@ -224,10 +224,9 @@ void up_release_handler(ClickRecognizerRef recognizer, void *context) {up_button
 void dn_push_in_handler(ClickRecognizerRef recognizer, void *context) {dn_button_depressed = true;}
 void dn_release_handler(ClickRecognizerRef recognizer, void *context) {dn_button_depressed = false;}
 void sl_push_in_handler(ClickRecognizerRef recognizer, void *context) {sl_button_depressed = true;   // SELECT button was pushed in
-  shoot_ray(player.x, player.y, player.facing);             // Shoot Ray from center of screen.  If it hit something:
-  //if(ray.hit>127) // If ray hit a block. -- Removed as it will always hit a block (or go out of bounds, which setmap can handle)
-  setmap(ray.x, ray.y, ray.hit&127); // If you shoot a block, remove it.
-  //if(ray.hit==128+3) setmap(ray.x, ray.y, 1);   // If Ray hit Circle Block(3), change it to a Normal Block (1)
+  shoot_ray(player.x, player.y, player.facing); // Shoot Ray from center of screen.  If it hit something:
+  //if(ray.hit>127)                             // If ray hit a block. -- Removed as it will always hit a block (or go out of bounds, which setmap can handle, or &127 below won't affect)
+  setmap(ray.x, ray.y, ray.hit&127);            // If you shoot a block, remove it.
 }
 void sl_release_handler(ClickRecognizerRef recognizer, void *context) {sl_button_depressed = false;}
 
@@ -235,7 +234,6 @@ void click_config_provider(void *context) {
   window_raw_click_subscribe(BUTTON_ID_UP, up_push_in_handler, up_release_handler, context);
   window_raw_click_subscribe(BUTTON_ID_DOWN, dn_push_in_handler, dn_release_handler, context);
   window_raw_click_subscribe(BUTTON_ID_SELECT, sl_push_in_handler, sl_release_handler, context);
-  //window_single_click_subscribe(BUTTON_ID_SELECT, sl_push_in_handler);
 }
 
 // ------------------------------------------------------------------------ //
@@ -260,18 +258,18 @@ static void init(void) {
     .unload = window_unload
   });
   
-  IF_BW(window_set_fullscreen(window, true));   // make sure full screen
+  IF_BW(window_set_fullscreen(window, true));   // make sure full screen on OG pebble
   
-  window_stack_push(window, false /* False = Not Animated */);
-  window_set_background_color(window, GColorBlack);
+  window_stack_push(window, false);
+  //window_set_background_color(window, GColorBlack);  // Overriding window draw function, so this won't do anything
   accel_data_service_subscribe(0, NULL);  // Start accelerometer
   
   srand(time(NULL));  // Seed randomizer so different map every time
   player = (struct PlayerStruct){.x=(64*(mapsize/2)), .y=(-2 * 64), .facing=10000};    // Seems like a good place to start
-  object = (struct PlayerStruct){.x=(2 * 64), .y=(64*(mapsize/2)), .facing=10000};    // sprite position
-  //GenerateRandomMap();                // generate a randomly dotted map
+  object = (struct PlayerStruct){.x=(2 * 64), .y=(64*(mapsize/2)), .facing=10000};     // sprite position  (.facing doesn't do anything yet)
+  //GenerateRandomMap();              // generate a randomly dotted map
   //GenerateMazeMap(mapsize/2, 0);    // generate a random maze, enterane on middle of top side
-  GenerateSquareMap();
+  GenerateSquareMap();                // Make a big empty room
   
   LoadMapTextures(); // Load textures
   // MainLoop() will be automatically started with dirty layer drawing
