@@ -142,58 +142,6 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
       if(colheight>halfheight) colheight=halfheight; // Make sure line isn't drawn beyond bounding box (also halve it cause of 2 32bit textures)
       
       // Texture the Ray hit, point to 1st half of texture (half, cause a 64x64px texture menas there's 2 uint32_t per texture row.  Also why * 2 below)
-//       target = (uint32_t*)texture[squaretype[ray.hit].face[ray.face]]->addr + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
-
-///    uint8_t *target2;
-///    target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]);
-//      target2 = (uint8_t*)target;
-//      target2 = target2 + (ray.offset*32);  // * gbitmap_get_bytes_per_row(the texutre)
-///    target = target + (ray.offset*2);
-    
-    
-    
-///    x = col+box.origin.x;  // X screen coordinate
-///    addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
-//       addr = (x >> 5) + ((box.origin.y + halfheight) * 5); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
-//       xbit = x & 31;        // X bit-shift amount (for which bit within screen memory's 32bit word the pixel exists)
-
-////       y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
-////       for(; y<colheight; y++, yoffset+=144) {
-////         xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-////         screen[addr - yoffset] = *(target2 + ((32 + (31-xoffset))/2));  // Draw Top Half
-////         screen[addr + yoffset] = *(target2 + ((32 - xoffset)/2));  // Draw Bottom Half
-
-        
-        
-//         How to work with Color Palette
-//  void replace_gbitmap_color(GColor color_to_replace, GColor replace_with_color, GBitmap *im){
-// 	GColor *current_palette = gbitmap_get_palette(im);
- 
-// 	for(int i = 0; i < 2; i++){
-// 		if ((color_to_replace.argb & 0x3F)==(current_palette[i].argb & 0x3F)){
-// 			current_palette[i].argb = (current_palette[i].argb & 0xC0)| (replace_with_color.argb & 0x3F);
-// 		}
-// 	}
-// }
-
-        
-//         screen[addr - yoffset] = (((*target >> (31-xoffset))&1))*0b11110000;  // Draw Top Half
-//         screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))*0b11110000;  // Draw Bottom Half
-
-////       }
-
-    
-//====== This works to convert 1bit B&W walls to 1bit color walls ======//
-//     target = (uint32_t*)gbitmap_get_data(texture[squaretype[ray.hit].face[ray.face]]) + ray.offset*2;// maybe use GBitmap's size veriables to store texture size?
-//     x = col+box.origin.x;  // X screen coordinate
-//     addr = x + ((box.origin.y + halfheight) * 144); // 32bit memory word containing pixel vertically centered at X. (Address=xaddr + yaddr = (Pixel.X/32) + 5*Pixel.Y)
-//     y=0; yoffset=0;  // y is y +/- from vertical center, yoffset is the screen memory position of y (and is always = y*5)
-//     for(; y<colheight; y++, yoffset+=144) {
-//       xoffset = (y * ray.dist / box.size.h) >> 16; // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
-//       screen[addr - yoffset] = (((*target >> (31-xoffset))&1))?0b11110000:0b11000000;  // Draw Top Half
-//       screen[addr + yoffset] = (((*(target+1)  >> xoffset)&1))?0b11110000:0b11000000;  // Draw Bottom Half
-//     }
-//=====================================================================//
 
     //64px / 8Bytes/row = 8px/Byte = 1bit/px
     //1px = x (1 bit per pixel, 2 colors)
@@ -229,7 +177,7 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
     switch(texformat[squaretype[ray.hit].face[ray.face]]) {
       case GBitmapFormat1BitPalette: {// IF 1bit texture. 8 means: 64px / 8Bytes/row = 8px/Byte = 1bit/px
         target += ray.offset<<3;//*8;   // maybe use GBitmap's size veriables to store texture size?  // * 8 = 8 bytes per row
-        target += 4 - 1;          // 4 = half of 8 Bytes/row
+        target += 4 - 1; //3         // 4 = half of 8 Bytes/row
         for(; y<colheight; y++, yoffset+=144) {
           xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
           screen[addr - yoffset] = palette[(*(target     - (xoffset>>3)) >> ((  (xoffset&7))<<0)&1)];  // Draw Top Half   <<0 (*1) is because 1 bit per pixel
@@ -238,7 +186,7 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
       } break;
       case GBitmapFormat2BitPalette: { // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
         target += ray.offset<<4;//*16;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row  // * 16 = 16 Bytes per row
-        target += 8 - 1;          // puts pointer at (mid) of row // 8 = half of 16 bytes/row
+        target += 8 - 1; //7         // puts pointer at (mid) of row // 8 = half of 16 bytes/row
         for(; y<=colheight; ++y, yoffset+=144) {
           xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
           screen[addr - yoffset] = palette[(*(target     - (xoffset>>2)) >> ((  (xoffset&3))<<1) )&3];  // Draw Top Half  // &3 (0-3=4) cause 4 pixels inside byte.  <<1 (*2) is cause 2 bits per pixel
@@ -248,7 +196,7 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
       } break;
       case GBitmapFormat4BitPalette: { // Else: Draw 4bits/px (16 color) texture (note: Texture size is 4bits/px * 64*64px = 2048 Bytes)
         target += ray.offset<<5;//*32;  // Puts pointer at row beginning // ray.offset is y position on texture = [0-63].  8 sets of 32bits = 1 row  //*32 = 32Bytes per Row
-        target += 16 - 1;         // puts pointer at (mid) of row (4 changes depending on palette)  // half of 32Bytes/row
+        target += 16 - 1; //15        // puts pointer at (mid) of row (4 changes depending on palette)  // half of 32Bytes/row
         for(; y<=colheight; ++y, yoffset+=144) {
           xoffset =  ((y * ray.dist / box.size.h) >> 16); // xoffset = which pixel of the texture is hit (0-31).  See Footnote 2
           screen[addr - yoffset] = palette[(*(target     - (xoffset>>1)) >> ((  (xoffset&1))<<2) )&15];  // Draw Top Half  // &1 cause 2 pixels inside byte.  *4 cause 4 bits wide per pixel.
@@ -351,6 +299,9 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
     
   } //End For (End RayTracing Loop)
 
+
+/*  Currently not working in color
+// =======================================SPRITES====================================================
   // Draw Sprites!
   // Sort sprites by distance from player
   // draw sprites in order from farthest to closest
@@ -362,9 +313,6 @@ void draw_3D(GContext *ctx, GRect box) { //, int32_t zoom) {
   // distance
   // type
   // d
-
-/*
-// =======================================SPRITES====================================================
  
   uint8_t numobjects=1;
   int32_t spritecol, objectdist;  //, xoffset, yoffset;
